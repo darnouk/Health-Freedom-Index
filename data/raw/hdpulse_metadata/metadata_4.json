@@ -1,0 +1,11 @@
+{
+  "apiToken": null,
+  "batchId": "22b69814-44a6-493a-ade1-d8863241ad4f",
+  "code": 400,
+  "errorTypeId": 6,
+  "helpURL": "http://ephtracking.cdc.gov/apihelp",
+  "message": "Invalid Call from API",
+  "status": "Bad Request",
+  "timeStamp": "2026/08/11 17:29:43",
+  "url": "https://ephtracking.cdc.gov/apigateway/api/v1/measureMetadata/423"
+}

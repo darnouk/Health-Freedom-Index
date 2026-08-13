@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1020,
+    "geographicTypeId": 2,
+    "geographicType": "County",
+    "selectOptionsTypeId": 1,
+    "selectOptionsType": "No Restrictions",
+    "smoothingLevelId": 1,
+    "smoothingLevel": "No Smoothing Available"
+  },
+  {
+    "id": 4127,
+    "geographicTypeId": 7,
+    "geographicType": "Census Tract",
+    "selectOptionsTypeId": 1,
+    "selectOptionsType": "No Restrictions",
+    "smoothingLevelId": 1,
+    "smoothingLevel": "No Smoothing Available"
+  }
+]

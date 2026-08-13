@@ -1,0 +1,3 @@
+geoid,county,state,pcp_per_10k,mh_providers_per_10k,dentists_per_10k,inpatient_beds_per_1k,pharmacies_per_10k,specialty_facilities_per_100k,uninsured_rate,food_env_index,gyms_per_10k,pm25,extreme_heat_days
+06075,San Francisco,CA,12.4,31.2,8.1,3.2,3.8,5.2,4.2,9.0,3.4,8.2,6
+48201,Harris,TX,7.1,14.6,4.9,2.6,2.9,4.4,19.4,7.3,2.1,10.4,71

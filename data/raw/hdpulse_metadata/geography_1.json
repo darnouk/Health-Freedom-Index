@@ -1,0 +1,11 @@
+{
+  "apiToken": null,
+  "batchId": "c47c56f9-8915-496e-b36b-ddcf09ad0237",
+  "code": 410,
+  "errorTypeId": 9,
+  "helpURL": "http://ephtracking.cdc.gov/apihelp",
+  "message": "Call is disabled. Please check the API User Guide for more info.",
+  "status": "Gone",
+  "timeStamp": "2026/08/11 17:29:44",
+  "url": "https://ephtracking.cdc.gov/apigateway/api/v1/geographicLevels/423"
+}
