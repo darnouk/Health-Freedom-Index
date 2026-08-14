@@ -34,6 +34,11 @@ body { display: flex; flex-direction: column; }
 }
 
 .brand h1 { margin: 0; font-size: 18px; letter-spacing: .2px; }
+.wip-tag {
+  vertical-align: middle; margin-left: 8px; padding: 2px 6px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--muted);
+  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+}
 .brand p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
 
 .topbar-controls { display: flex; gap: 8px; }
@@ -105,6 +110,9 @@ main { flex: 1; display: flex; min-height: 0; }
 
 .indicator { padding: 6px 0 10px; }
 .indicator.disabled { opacity: .45; }
+/* Indicators whose data is not published yet: greyed out and non-interactive. */
+.indicator.unavailable { opacity: .38; filter: grayscale(1); }
+.indicator.unavailable input[type="range"] { cursor: not-allowed; pointer-events: none; }
 
 .indicator-head {
   display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
@@ -114,9 +122,9 @@ main { flex: 1; display: flex; min-height: 0; }
 .level { font-size: 10.5px; color: var(--accent); text-align: right; white-space: nowrap; }
 .level.muted { color: var(--muted); }
 
-/* Provenance line under each slider: never let demo values look like real ones. */
+/* Coverage note under each slider. */
 .source-note { margin: 2px 0 4px; font-size: 10px; color: var(--muted); }
-.source-note.demo { color: var(--warn); font-weight: 600; }
+.source-note.unavailable { color: var(--muted); font-style: italic; }
 .source-note.partial { color: #d9a441; }
 .source-note.real { color: var(--muted); }
 

@@ -1,5 +1,5 @@
 /* global L, CATEGORIES, ALL_INDICATORS, IMPORTANCE_LABELS, DEFAULT_IMPORTANCE, PRESETS,
-   STATE_FIPS, generateDemoValues, parseCSV, normalizeGeoid, toNumber, buildPercentiles,
+   STATE_FIPS, parseCSV, normalizeGeoid, toNumber, buildPercentiles,
    computeScores, percentileRanks, importanceToWeight */
 
 const STORAGE_KEY = 'hfi.importance.v1';
@@ -15,8 +15,8 @@ const state = {
   importance: {},
   scores: new Map(),        // geoid -> { score, rank, coverage, parts }
   range: { min: 0, max: 100 },
-  usingDemoData: true,
-  demoKeys: new Set(),
+  // Indicators with no published CSV yet: locked off so nothing fabricated reaches the map.
+  unavailableKeys: new Set(),
   selectedGeoid: null
 };
 
@@ -54,29 +54,32 @@ function ingestCSV(rows) {
   return matched;
 }
 
-/** Fills indicators that have no real data yet so the map stays usable while you collect it. */
-function fillDemoGaps(realKeys) {
-  const gaps = ALL_INDICATORS.filter(ind => !realKeys.has(ind.key)).map(ind => ind.key);
-  for (const [geoid, rec] of state.dataByGeoid) {
-    const demo = generateDemoValues(geoid);
-    for (const key of gaps) rec.values[key] = demo[key];
+/** Indicators with no CSV yet are locked off entirely rather than filled with placeholders. */
+function lockUnavailable(realKeys) {
+  const missing = ALL_INDICATORS.filter(ind => !realKeys.has(ind.key)).map(ind => ind.key);
+  state.unavailableKeys = new Set(missing);
+  for (const key of missing) {
+    state.importance[key] = 1;
+    const row = document.querySelector(`.indicator[data-key="${key}"]`);
+    const slider = document.getElementById(`sl-${key}`);
+    const level = document.getElementById(`lv-${key}`);
+    if (slider) { slider.value = 1; slider.disabled = true; }
+    if (level) { level.textContent = 'Coming soon'; level.classList.add('muted'); }
+    if (row) { row.classList.add('disabled', 'unavailable'); }
   }
-  return gaps;
+  return missing;
 }
 
-/**
- * Labels each slider with where its numbers come from, so placeholder values can never be
- * mistaken for real ones, and real indicators disclose how many counties they actually cover.
- */
-function annotateIndicatorSources(demoKeys) {
+/** Notes how complete each available indicator is; unavailable ones say so plainly. */
+function annotateIndicatorSources() {
   const total = state.dataByGeoid.size;
   for (const ind of ALL_INDICATORS) {
     const el = document.getElementById(`src-${ind.key}`);
     if (!el) continue;
 
-    if (demoKeys.has(ind.key)) {
-      el.textContent = 'Demo data — not real values';
-      el.className = 'source-note demo';
+    if (state.unavailableKeys.has(ind.key)) {
+      el.textContent = 'Data not published yet — excluded from the index';
+      el.className = 'source-note unavailable';
       continue;
     }
 
@@ -87,10 +90,10 @@ function annotateIndicatorSources(demoKeys) {
     const missing = total - withData;
     if (missing > 0) {
       const pct = Math.round((withData / total) * 100);
-      el.textContent = `Real data — ${pct}% of counties (${missing} missing)`;
+      el.textContent = `${pct}% of counties (${missing} missing)`;
       el.className = 'source-note partial';
     } else {
-      el.textContent = 'Real data — all counties';
+      el.textContent = 'All counties covered';
       el.className = 'source-note real';
     }
   }
@@ -251,11 +254,13 @@ function buildIndicatorRow(ind) {
 }
 
 function setImportance(key, value) {
+  // Locked indicators have no data behind them; they stay off no matter what is requested.
+  if (state.unavailableKeys.has(key)) value = 1;
   state.importance[key] = value;
   const slider = document.getElementById(`sl-${key}`);
   const level = document.getElementById(`lv-${key}`);
   if (slider) slider.value = value;
-  if (level) {
+  if (level && !state.unavailableKeys.has(key)) {
     level.textContent = IMPORTANCE_LABELS[value - 1];
     level.classList.toggle('muted', value === 1);
   }
@@ -271,9 +276,10 @@ function scheduleRecompute() {
 }
 
 function updateActiveCount() {
+  const usable = ALL_INDICATORS.filter(i => !state.unavailableKeys.has(i.key)).length;
   const active = ALL_INDICATORS.filter(i => importanceToWeight(state.importance[i.key]) > 0).length;
   document.getElementById('active-count').textContent =
-    `${active} of ${ALL_INDICATORS.length} indicators active`;
+    `${active} of ${usable} available indicators active`;
 }
 
 function applyPreset(name) {
@@ -313,8 +319,7 @@ function indicatorValueText(key, value) {
   const abs = Math.abs(value);
   const digits = abs >= 100 ? 0 : abs >= 10 ? 1 : 2;
   const num = Number(value.toFixed(digits)).toLocaleString();
-  const text = ind.unit === '%' ? `${num}%` : `${num} ${ind.unit}`;
-  return state.demoKeys.has(key) ? `${text} (demo)` : text;
+  return ind.unit === '%' ? `${num}%` : `${num} ${ind.unit}`;
 }
 
 function renderLeaderboard(ordered) {
@@ -517,17 +522,15 @@ async function init() {
     }
   }
 
-  const gaps = fillDemoGaps(realKeys);
-  state.usingDemoData = gaps.length > 0;
-  state.demoKeys = new Set(gaps);
-  annotateIndicatorSources(state.demoKeys);
+  const missing = lockUnavailable(realKeys);
+  annotateIndicatorSources();
   if (!realKeys.size) {
-    setStatus('Demo data for all indicators — add CSVs to data/ to use real values.', 'warn');
-  } else if (gaps.length) {
-    setStatus(`Real data: ${realKeys.size} of ${ALL_INDICATORS.length} indicators. `
-      + `The other ${gaps.length} are still placeholders — see the notes under each slider.`, 'warn');
+    setStatus('No indicator data available yet.', 'warn');
+  } else if (missing.length) {
+    setStatus(`Work in progress: ${realKeys.size} of ${ALL_INDICATORS.length} indicators are published. `
+      + `The remaining ${missing.length} are disabled until their data is ready.`, 'warn');
   } else {
-    setStatus('Real data loaded for all indicators.', 'ok');
+    setStatus(`All ${ALL_INDICATORS.length} indicators published.`, 'ok');
   }
 
   state.percentiles = buildPercentiles(state.dataByGeoid, ALL_INDICATORS).percentiles;
